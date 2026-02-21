@@ -138,9 +138,10 @@ def scan_new_diaries(config: dict, processed: set) -> list:
 
 # ─── 提示词 ────────────────────────────────────────────────────────────────────
 
-def build_prompt(diary_text: str, template: dict) -> str:
+def build_prompt(diary_text: str, template: dict, protagonist: str = "我", plot_count: int = 0) -> str:
     template_desc = json.dumps(template, ensure_ascii=False, indent=2)
-    return f"""你是一个专业的小说家。请根据以下模板，以‘我’为主人公将小说根据时间线将内容拆分为结构化数据。
+    plot_hint = f"，事件维度请提取约 {plot_count} 个关键情节节点" if plot_count > 0 else ""
+    return f"""你是一个专业的小说家。请根据以下模板，以’{protagonist}’为主人公将小说根据时间线将内容拆分为结构化数据{plot_hint}。
 
 ## 模板定义
 {template_desc}
@@ -342,21 +343,25 @@ def process_diary(
     config: dict,
     template: dict,
     dry_run: bool = False,
+    protagonist: str = "我",
+    plot_count: int = 0,
 ) -> bool:
     logger = get_logger()
     logger.info(f"处理日记: {diary_path.name}")
+    if protagonist != "我":
+        logger.info(f"主人公: {protagonist}")
+    if plot_count > 0:
+        logger.info(f"目标情节数量: {plot_count}")
 
     diary_text = diary_path.read_text(encoding="utf-8").strip()
     if not diary_text:
         logger.warning(f"日记内容为空，跳过: {diary_path.name}")
         return True
 
-    # 用文件 stem 作为条目文件名前缀（章节名/场景名）
-    # 若 stem 本身是 YYYY-MM-DD 格式（有明确时间轴的小说）则直接使用，否则原样保留
     stem = diary_path.stem
-    diary_date = stem  # 不回退到现实日期，由作者在文件命名时自行决定标识
+    diary_date = stem
 
-    prompt = build_prompt(diary_text, template)
+    prompt = build_prompt(diary_text, template, protagonist, plot_count)
 
     if dry_run:
         logger.info("[DRY RUN] 跳过 API 调用，提示词已生成")
@@ -413,6 +418,8 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="仅扫描文件，不调用 API 也不生成文件")
     parser.add_argument("--force", action="store_true", help="忽略处理记录，强制重新处理所有日记")
     parser.add_argument("--file", metavar="PATH", help="仅处理指定的单个日记文件（相对 vault 或绝对路径）")
+    parser.add_argument("--protagonist", "-p", default="我", help="主人公名字（默认：我）")
+    parser.add_argument("--plot-count", "-n", type=int, default=0, help="目标情节数量，0 表示不限（默认：0）")
     args = parser.parse_args()
 
     # 加载配置
@@ -465,7 +472,8 @@ def main() -> None:
     # 逐篇处理
     success, fail = 0, 0
     for diary_path in diary_files:
-        ok = process_diary(diary_path, config, template, dry_run=args.dry_run)
+        ok = process_diary(diary_path, config, template, dry_run=args.dry_run,
+                           protagonist=args.protagonist, plot_count=args.plot_count)
         if ok:
             if not args.dry_run:
                 record_processed(config, make_log_key(diary_path))

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📖 小说知识库</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f0f4f8;
+  --surface:  #ffffff;
+  --border:   #dde3ec;
+  --primary:  #3b6ff5;
+  --primary2: #2554d4;
+  --success:  #16a34a;
+  --error:    #dc2626;
+  --warn:     #d97706;
+  --text:     #1a202c;
+  --muted:    #6b7a99;
+  --radius:   12px;
+  --shadow:   0 2px 12px rgba(0,0,0,.08);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b6ff5 100%);
+  color: #fff;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 16px rgba(30,58,138,.25);
+}
+header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: .3px; }
+header .sub { font-size: .82rem; opacity: .75; margin-left: auto; }
+
+/* ── Tab bar ── */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  padding: 16px 32px 0;
+  border-bottom: 2px solid var(--border);
+  background: var(--surface);
+}
+.tab-btn {
+  padding: 10px 22px;
+  border: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  bottom: -2px;
+}
+.tab-btn:hover { color: var(--primary); background: #eef2ff; }
+.tab-btn.active {
+  color: var(--primary);
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-bottom-color: var(--bg);
+}
+
+/* ── Layout ── */
+.content { max-width: 860px; margin: 0 auto; padding: 28px 24px 60px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Form ── */
+.form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+.form-group.w2 { flex: 2; }
+label { font-size: .82rem; font-weight: 600; color: var(--muted); }
+input, select, textarea {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: .93rem;
+  color: var(--text);
+  background: #fafbfd;
+  transition: border-color .15s;
+  font-family: inherit;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #fff;
+}
+textarea { resize: vertical; min-height: 200px; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.primary:hover { background: var(--primary2); }
+.btn.primary:disabled { background: #93aee8; cursor: not-allowed; }
+.btn.secondary { background: var(--bg); border: 1.5px solid var(--border); color: var(--text); }
+.btn.secondary:hover { border-color: var(--primary); color: var(--primary); }
+.btn.danger { background: #fee2e2; color: var(--error); }
+.btn.danger:hover { background: #fecaca; }
+
+.btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
+
+/* ── Status chips ── */
+.status { font-size: .82rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+.status.ok  { background: #dcfce7; color: var(--success); }
+.status.err { background: #fee2e2; color: var(--error); }
+.status.info { background: #dbeafe; color: var(--primary); }
+
+/* ── Char counter ── */
+.char-counter {
+  font-size: .8rem;
+  font-weight: 600;
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e0e7ff;
+  color: var(--primary);
+}
+.char-counter.warn { background: #fef3c7; color: var(--warn); }
+.char-counter.over { background: #fee2e2; color: var(--error); }
+
+/* ── Log terminal ── */
+.log-terminal {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: .8rem;
+  line-height: 1.7;
+  color: #94a3b8;
+  max-height: 320px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-terminal .l-ok   { color: #4ade80; }
+.log-terminal .l-err  { color: #f87171; }
+.log-terminal .l-warn { color: #fbbf24; }
+.log-terminal .l-dim  { color: #475569; }
+
+/* ── Chat ── */
+.chat-messages {
+  min-height: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+.msg { display: flex; flex-direction: column; gap: 4px; max-width: 82%; }
+.msg.user { align-self: flex-end; align-items: flex-end; }
+.msg.ai   { align-self: flex-start; align-items: flex-start; }
+
+.bubble {
+  padding: 11px 15px;
+  border-radius: 16px;
+  line-height: 1.65;
+  font-size: .92rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg.user .bubble {
+  background: var(--primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg.ai .bubble {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.msg-label { font-size: .73rem; color: var(--muted); font-weight: 600; padding: 0 4px; }
+
+/* Tool call chip */
+.tool-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: .76rem;
+  font-family: monospace;
+  color: var(--muted);
+  margin: 2px 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-chip .icon { font-size: .9em; }
+
+/* Loading dots */
+.loading-dots::after {
+  content: '';
+  animation: dots 1.2s steps(4, end) infinite;
+}
+@keyframes dots {
+  0%,20% { content: ''; }
+  40%     { content: '.'; }
+  60%     { content: '..'; }
+  80%,100%{ content: '...'; }
+}
+
+/* Chat input */
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.chat-input-row textarea { min-height: 60px; max-height: 140px; resize: vertical; flex: 1; }
+.chat-input-row .btn { align-self: flex-end; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem">📖</span>
+  <h1>小说知识库</h1>
+  <span class="sub">本地 AI 沉浸阅读工具</span>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('config')">⚙️ 配置</button>
+  <button class="tab-btn"        onclick="switchTab('parse')">📚 上传解析</button>
+  <button class="tab-btn"        onclick="switchTab('chat')">💬 开始聊天</button>
+</div>
+
+<div class="content">
+
+  <!-- ══════════════════ TAB 1: CONFIG ══════════════════ -->
+  <div id="tab-config" class="tab-panel active">
+
+    <div class="card">
+      <h2>📁 存储配置</h2>
+      <div class="form-group">
+        <label>Vault 根目录（绝对路径）</label>
+        <input type="text" id="vault-path" placeholder="/Users/xxx/Documents/Obsidian Vault/novel">
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label>小说源文件夹（相对于 Vault）</label>
+        <input type="text" id="diary-folder" value="小说" placeholder="小说">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🤖 AI 配置</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>提供商</label>
+          <select id="provider" onchange="onProviderChange()">
+            <option value="deepseek">DeepSeek</option>
+            <option value="openai">OpenAI</option>
+          </select>
+        </div>
+        <div class="form-group w2">
+          <label>模型</label>
+          <input type="text" id="model" value="deepseek-chat">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label>API Key <span id="key-status"></span></label>
+        <input type="password" id="api-key" placeholder="输入新 Key；留空则保留已保存的 Key">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="saveConfig()">💾 保存配置</button>
+        <span id="config-msg"></span>
+      </div>
+    </div>
+
+  </div><!-- /tab-config -->
+
+  <!-- ══════════════════ TAB 2: PARSE ══════════════════ -->
+  <div id="tab-parse" class="tab-panel">
+
+    <div class="card">
+      <h2>📝 小说信息</h2>
+      <div class="form-row">
+        <div class="form-group w2">
+          <label>文件名（不含 .md 后缀）</label>
+          <input type="text" id="novel-name" placeholder="动物园">
+        </div>
+        <div class="form-group">
+          <label>主人公名字</label>
+          <input type="text" id="protagonist" value="我">
+        </div>
+        <div class="form-group" style="max-width:110px">
+          <label>情节数量</label>
+          <input type="number" id="plot-count" value="10" min="1" max="99">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>
+        📄 小说内容
+        <span id="char-counter" class="char-counter">0 / 13000</span>
+      </h2>
+      <textarea id="novel-content"
+        placeholder="在此粘贴小说内容（上限 13000 字）…"
+        oninput="onContentInput()"></textarea>
+      <div class="btn-row">
+        <button class="btn primary" id="parse-btn" onclick="parseNovel()">⚡ 上传并解析</button>
+        <button class="btn secondary" onclick="clearContent()">清空</button>
+        <span id="parse-msg"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🖥 解析日志</h2>
+      <div class="log-terminal" id="parse-log">等待解析…</div>
+    </div>
+
+  </div><!-- /tab-parse -->
+
+  <!-- ══════════════════ TAB 3: CHAT ══════════════════ -->
+  <div id="tab-chat" class="tab-panel">
+
+    <div class="card" style="padding-bottom:16px">
+      <h2>📂 故事目录</h2>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group w2">
+          <label>Vault 目录（与配置页相同，或单独指定）</label>
+          <input type="text" id="chat-vault" placeholder="/path/to/vault">
+        </div>
+        <div style="display:flex;gap:8px;padding-bottom:1px">
+          <button class="btn primary"   onclick="startChat()">▶ 开始对话</button>
+          <button class="btn secondary" onclick="resetChat()">↺ 重置</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:.8rem;color:var(--muted)">
+        特殊指令：<code>跳过</code> · <code>回顾</code> · <code>认识XXX</code> · <code>重来</code>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px 20px">
+      <div class="chat-messages" id="chat-messages">
+        <div style="text-align:center;color:var(--muted);padding:40px 0;font-size:.9rem">
+          设置 Vault 目录后点击「开始对话」，AI 将自动读取故事档案并引导你进入第一幕。
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" placeholder="输入你的行动或问题… (Ctrl+Enter 发送)"
+          onkeydown="onChatKey(event)"></textarea>
+        <button class="btn primary" id="send-btn" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+
+  </div><!-- /tab-chat -->
+
+</div><!-- /content -->
+
+<script>
+// ─── Tab switching ──────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['config','parse','chat'];
+    b.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-' + name);
+  });
+}
+
+// ─── Config ────────────────────────────────────────────────────────────────────
+const PROVIDER_MODELS = { deepseek: 'deepseek-chat', openai: 'gpt-4o' };
+
+function onProviderChange() {
+  const p = document.getElementById('provider').value;
+  document.getElementById('model').value = PROVIDER_MODELS[p] || '';
+}
+
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    document.getElementById('vault-path').value   = d.vault_path    || '';
+    document.getElementById('diary-folder').value = d.diary_folder  || '小说';
+    document.getElementById('provider').value     = d.provider      || 'deepseek';
+    document.getElementById('model').value        = d.model         || 'deepseek-chat';
+    document.getElementById('chat-vault').value   = d.vault_path    || '';
+    const ks = document.getElementById('key-status');
+    if (d.has_key) {
+      ks.innerHTML = `<span class="status ok">✓ 已保存 ${d.api_key_masked}</span>`;
+    } else {
+      ks.innerHTML = `<span class="status err">未配置</span>`;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function saveConfig() {
+  const body = {
+    vault_path:   document.getElementById('vault-path').value.trim(),
+    diary_folder: document.getElementById('diary-folder').value.trim() || '小说',
+    provider:     document.getElementById('provider').value,
+    model:        document.getElementById('model').value.trim(),
+    api_key:      document.getElementById('api-key').value.trim(),
+  };
+  const msg = document.getElementById('config-msg');
+  msg.innerHTML = '<span class="status info">保存中…</span>';
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    msg.innerHTML = '<span class="status ok">✓ 已保存</span>';
+    document.getElementById('api-key').value = '';
+    document.getElementById('chat-vault').value = body.vault_path;
+    await loadConfig();
+  } catch(e) {
+    msg.innerHTML = `<span class="status err">✗ ${e.message}</span>`;
+  }
+}
+
+// ─── Parse ────────────────────────────────────────────────────────────────────
+function onContentInput() {
+  const len = document.getElementById('novel-content').value.length;
+  const el = document.getElementById('char-counter');
+  el.textContent = `${len.toLocaleString()} / 13,000`;
+  el.className = 'char-counter' + (len > 13000 ? ' over' : len > 11000 ? ' warn' : '');
+}
+
+function clearContent() {
+  document.getElementById('novel-content').value = '';
+  onContentInput();
+}
+
+function logLine(text) {
+  const log = document.getElementById('parse-log');
+  const span = document.createElement('span');
+  let cls = '';
+  if (/✓|完成|成功/.test(text)) cls = 'l-ok';
+  else if (/✗|失败|ERROR|错误/.test(text)) cls = 'l-err';
+  else if (/WARNING|警告/.test(text)) cls = 'l-warn';
+  else if (/^─+$/.test(text)) cls = 'l-dim';
+  span.className = cls;
+  span.textContent = text + '\n';
+  log.appendChild(span);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function parseNovel() {
+  const name = document.getElementById('novel-name').value.trim();
+  const content = document.getElementById('novel-content').value;
+  const protagonist = document.getElementById('protagonist').value.trim() || '我';
+  const plotCount = parseInt(document.getElementById('plot-count').value) || 10;
+
+  if (!name) { alert('请填写文件名'); return; }
+  if (!content.trim()) { alert('请输入小说内容'); return; }
+  if (content.length > 13000) { alert(`超出 13000 字上限（当前 ${content.length} 字）`); return; }
+
+  const btn = document.getElementById('parse-btn');
+  const msg = document.getElementById('parse-msg');
+  btn.disabled = true;
+  btn.textContent = '⏳ 解析中…';
+  msg.innerHTML = '';
+
+  const log = document.getElementById('parse-log');
+  log.innerHTML = '';
+
+  const fd = new FormData();
+  fd.append('novel_name', name);
+  fd.append('protagonist', protagonist);
+  fd.append('plot_count', plotCount);
+  fd.append('content', content);
+
+  try {
+    const resp = await fetch('/api/novel/parse', { method: 'POST', body: fd });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      logLine('✗ ' + txt);
+      msg.innerHTML = '<span class="status err">✗ 请求失败</span>';
+      return;
+    }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const d = JSON.parse(line.slice(5).trim());
+        if (d.type === 'log')   logLine(d.text);
+        if (d.type === 'done')  { msg.innerHTML = `<span class="status ok">✓ ${d.text}</span>`; }
+        if (d.type === 'error') { msg.innerHTML = `<span class="status err">✗ ${d.text}</span>`; }
+      }
+    }
+  } catch(e) {
+    logLine('✗ ' + e.message);
+    msg.innerHTML = `<span class="status err">✗ ${e.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ 上传并解析';
+  }
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+let chatBusy = false;
+
+function onChatKey(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function appendMsg(role, content) {
+  const wrap = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = role === 'user' ? '你' : '📖 叙事引擎';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  div.appendChild(label);
+  div.appendChild(bubble);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return bubble;
+}
+
+function appendToolChip(name, args) {
+  const wrap = document.getElementById('chat-messages');
+  const chip = document.createElement('div');
+  chip.className = 'tool-chip';
+  const argStr = Object.keys(args).length
+    ? ' ' + JSON.stringify(args, null, 0).slice(0, 60) + (JSON.stringify(args).length > 60 ? '…' : '')
+    : '';
+  chip.innerHTML = `<span class="icon">🔍</span> 查档: ${name}(${argStr})`;
+  wrap.appendChild(chip);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function appendLoading() {
+  const wrap = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'loading-msg';
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = '📖 叙事引擎';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble loading-dots';
+  bubble.textContent = '思考中';
+  div.appendChild(label);
+  div.appendChild(bubble);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeLoading() {
+  const el = document.getElementById('loading-msg');
+  if (el) el.remove();
+}
+
+async function startChat() {
+  const dir = document.getElementById('chat-vault').value.trim();
+  if (!dir) { alert('请先填写 Vault 目录'); return; }
+
+  document.getElementById('chat-messages').innerHTML =
+    '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.85rem">初始化会话…</div>';
+
+  try {
+    const r = await fetch('/api/chat/reset', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: 'default', vault_dir: dir })
+    });
+    if (!r.ok) throw new Error(await r.text());
+    document.getElementById('chat-messages').innerHTML = '';
+    // Auto-send an opening prompt
+    document.getElementById('chat-input').value = '开始';
+    await sendMessage();
+  } catch(e) {
+    document.getElementById('chat-messages').innerHTML =
+      `<div style="color:var(--error);padding:16px">✗ ${e.message}</div>`;
+  }
+}
+
+async function resetChat() {
+  const dir = document.getElementById('chat-vault').value.trim();
+  await fetch('/api/chat/reset', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ session_id: 'default', vault_dir: dir })
+  });
+  document.getElementById('chat-messages').innerHTML =
+    '<div style="text-align:center;color:var(--muted);padding:40px 0;font-size:.9rem">会话已重置，点击「开始对话」重新开始。</div>';
+}
+
+async function sendMessage() {
+  if (chatBusy) return;
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const dir = document.getElementById('chat-vault').value.trim();
+  if (!dir) { alert('请先设置 Vault 目录并点击「开始对话」'); return; }
+
+  input.value = '';
+  appendMsg('user', msg);
+  appendLoading();
+  chatBusy = true;
+  document.getElementById('send-btn').disabled = true;
+
+  const fd = new FormData();
+  fd.append('message', msg);
+  fd.append('vault_dir', dir);
+  fd.append('session_id', 'default');
+
+  let aiBubble = null;
+  let contentBuffer = '';
+
+  try {
+    const resp = await fetch('/api/chat/message', { method: 'POST', body: fd });
+    if (!resp.ok) {
+      removeLoading();
+      const txt = await resp.text();
+      appendMsg('ai', '⚠ ' + txt);
+      return;
+    }
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const d = JSON.parse(line.slice(5).trim());
+
+        if (d.type === 'tool') {
+          removeLoading();
+          appendToolChip(d.name, d.args || {});
+          appendLoading();
+        }
+        else if (d.type === 'content') {
+          removeLoading();
+          aiBubble = appendMsg('ai', d.text);
+        }
+        else if (d.type === 'delta') {
+          if (!aiBubble) {
+            removeLoading();
+            aiBubble = appendMsg('ai', '');
+          }
+          contentBuffer += d.text;
+          aiBubble.textContent = contentBuffer;
+          document.getElementById('chat-messages').scrollTop = 9999;
+        }
+        else if (d.type === 'done') {
+          removeLoading();
+        }
+        else if (d.type === 'error') {
+          removeLoading();
+          appendMsg('ai', '⚠ ' + d.text);
+        }
+      }
+    }
+  } catch(e) {
+    removeLoading();
+    appendMsg('ai', '⚠ 连接错误：' + e.message);
+  } finally {
+    chatBusy = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadConfig();
+</script>
+</body>
+</html>
