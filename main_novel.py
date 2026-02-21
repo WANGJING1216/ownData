@@ -55,14 +55,10 @@ def load_config(config_path: str = "config.yaml") -> dict:
 
 
 def _validate_config(config: dict) -> None:
-    required_keys = ["obsidian_vault_path", "diary_folder", "template_path", "api"]
+    required_keys = ["obsidian_vault_path", "template_path", "api"]
     for key in required_keys:
         if key not in config:
             raise ValueError(f"配置文件缺少必要字段: {key}")
-
-    vault_path = Path(config["obsidian_vault_path"])
-    if not vault_path.exists():
-        raise FileNotFoundError(f"Obsidian 库路径不存在: {vault_path}")
 
     api_key = config["api"].get("api_key", "")
     if not api_key or api_key.startswith("sk-xxx"):
@@ -141,7 +137,7 @@ def scan_new_diaries(config: dict, processed: set) -> list:
 def build_prompt(diary_text: str, template: dict, protagonist: str = "我", plot_count: int = 0) -> str:
     template_desc = json.dumps(template, ensure_ascii=False, indent=2)
     plot_hint = f"，事件维度请提取约 {plot_count} 个关键情节节点" if plot_count > 0 else ""
-    return f"""你是一个专业的小说家。请根据以下模板，以’{protagonist}’为主人公将小说根据时间线将内容拆分为结构化数据{plot_hint}。
+    return f"""你是一个专业的小说家。请根据以下模板，以’{protagonist}’为主人公将小说根据时间线将内容拆分为结构化数据。
 
 ## 模板定义
 {template_desc}
@@ -420,6 +416,7 @@ def main() -> None:
     parser.add_argument("--file", metavar="PATH", help="仅处理指定的单个日记文件（相对 vault 或绝对路径）")
     parser.add_argument("--protagonist", "-p", default="我", help="主人公名字（默认：我）")
     parser.add_argument("--plot-count", "-n", type=int, default=0, help="目标情节数量，0 表示不限（默认：0）")
+    parser.add_argument("--vault", metavar="PATH", help="覆盖 config 中的 vault 路径，目录不存在时自动创建（web 模式使用）")
     args = parser.parse_args()
 
     # 加载配置
@@ -428,6 +425,13 @@ def main() -> None:
     except Exception as e:
         print(f"[ERROR] 配置加载失败: {e}", file=sys.stderr)
         sys.exit(1)
+
+    # --vault 覆盖：将 per-novel 目录作为 vault 根
+    if args.vault:
+        vault_dir = Path(args.vault)
+        vault_dir.mkdir(parents=True, exist_ok=True)
+        config["obsidian_vault_path"] = str(vault_dir)
+        config.setdefault("diary_folder", "src")
 
     # 初始化日志
     log_file = config.get("log_file")

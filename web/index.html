@@ -262,6 +262,15 @@ textarea { resize: vertical; min-height: 200px; }
 }
 .chat-input-row textarea { min-height: 60px; max-height: 140px; resize: vertical; flex: 1; }
 .chat-input-row .btn { align-self: flex-end; white-space: nowrap; }
+
+/* Novel select row */
+.novel-select-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.novel-select-row select { flex: 1; min-width: 180px; }
 </style>
 </head>
 <body>
@@ -284,24 +293,12 @@ textarea { resize: vertical; min-height: 200px; }
   <div id="tab-config" class="tab-panel active">
 
     <div class="card">
-      <h2>📁 存储配置</h2>
-      <div class="form-group">
-        <label>Vault 根目录（绝对路径）</label>
-        <input type="text" id="vault-path" placeholder="/Users/xxx/Documents/Obsidian Vault/novel">
-      </div>
-      <div class="form-group" style="margin-top:12px">
-        <label>小说源文件夹（相对于 Vault）</label>
-        <input type="text" id="diary-folder" value="小说" placeholder="小说">
-      </div>
-    </div>
-
-    <div class="card">
       <h2>🤖 AI 配置</h2>
       <div class="form-row">
         <div class="form-group">
           <label>提供商</label>
           <select id="provider" onchange="onProviderChange()">
-            <option value="deepseek">DeepSeek</option>
+            <option value="deepseek">DeepSeek（推荐）</option>
             <option value="openai">OpenAI</option>
           </select>
         </div>
@@ -314,10 +311,29 @@ textarea { resize: vertical; min-height: 200px; }
         <label>API Key <span id="key-status"></span></label>
         <input type="password" id="api-key" placeholder="输入新 Key；留空则保留已保存的 Key">
       </div>
+      <div style="margin-top:10px;font-size:.82rem;color:var(--muted);line-height:1.6">
+        推荐使用 <strong>DeepSeek</strong>：访问
+        <a href="https://platform.deepseek.com" target="_blank" style="color:var(--primary)">platform.deepseek.com</a>
+        注册后获取 API Key，费用极低（约 ¥1/百万 tokens）。
+      </div>
 
       <div class="btn-row">
         <button class="btn primary" onclick="saveConfig()">💾 保存配置</button>
         <span id="config-msg"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📁 数据存储</h2>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.8">
+        每本上传的小说自动保存到程序目录下的 <code>data/</code> 文件夹：
+        <ul style="margin:8px 0 0 20px">
+          <li><code>data/小说名/src/小说名.md</code> — 原始文本</li>
+          <li><code>data/小说名/事件/</code> — AI 解析的事件档案</li>
+          <li><code>data/小说名/人物/</code> — 角色档案</li>
+          <li><code>data/小说名/属性/</code> — 属性档案</li>
+        </ul>
+        <span style="margin-top:8px;display:block">无需手动配置路径，开箱即用。</span>
       </div>
     </div>
 
@@ -330,16 +346,16 @@ textarea { resize: vertical; min-height: 200px; }
       <h2>📝 小说信息</h2>
       <div class="form-row">
         <div class="form-group w2">
-          <label>文件名（不含 .md 后缀）</label>
-          <input type="text" id="novel-name" placeholder="动物园">
+          <label>小说名称（不含 .md 后缀）</label>
+          <input type="text" id="novel-name" placeholder="例：动物园、第一章、战场初遇">
         </div>
         <div class="form-group">
           <label>主人公名字</label>
           <input type="text" id="protagonist" value="我">
         </div>
         <div class="form-group" style="max-width:110px">
-          <label>情节数量</label>
-          <input type="number" id="plot-count" value="10" min="1" max="99">
+          <label>情节数量(暂不可设置)</label>
+          <input type="number" id="plot-count" value="默认无法设置" min="1" max="99">
         </div>
       </div>
     </div>
@@ -347,10 +363,10 @@ textarea { resize: vertical; min-height: 200px; }
     <div class="card">
       <h2>
         📄 小说内容
-        <span id="char-counter" class="char-counter">0 / 13000</span>
+        <span id="char-counter" class="char-counter">0 / 20,000</span>
       </h2>
       <textarea id="novel-content"
-        placeholder="在此粘贴小说内容（上限 13000 字）…"
+        placeholder="在此粘贴小说内容（上限 20,000 字）…"
         oninput="onContentInput()"></textarea>
       <div class="btn-row">
         <button class="btn primary" id="parse-btn" onclick="parseNovel()">⚡ 上传并解析</button>
@@ -370,18 +386,16 @@ textarea { resize: vertical; min-height: 200px; }
   <div id="tab-chat" class="tab-panel">
 
     <div class="card" style="padding-bottom:16px">
-      <h2>📂 故事目录</h2>
-      <div class="form-row" style="align-items:flex-end">
-        <div class="form-group w2">
-          <label>Vault 目录（与配置页相同，或单独指定）</label>
-          <input type="text" id="chat-vault" placeholder="/path/to/vault">
-        </div>
-        <div style="display:flex;gap:8px;padding-bottom:1px">
-          <button class="btn primary"   onclick="startChat()">▶ 开始对话</button>
-          <button class="btn secondary" onclick="resetChat()">↺ 重置</button>
-        </div>
+      <h2>📖 选择小说</h2>
+      <div class="novel-select-row">
+        <select id="novel-select">
+          <option value="">-- 请先上传并解析一本小说 --</option>
+        </select>
+        <button class="btn primary"   onclick="startChat()">▶ 开始对话</button>
+        <button class="btn secondary" onclick="resetChat()">↺ 重置</button>
+        <button class="btn secondary" onclick="loadNovelList()" title="刷新列表">⟳</button>
       </div>
-      <div style="margin-top:10px;font-size:.8rem;color:var(--muted)">
+      <div style="margin-top:12px;font-size:.8rem;color:var(--muted)">
         特殊指令：<code>跳过</code> · <code>回顾</code> · <code>认识XXX</code> · <code>重来</code>
       </div>
     </div>
@@ -389,7 +403,7 @@ textarea { resize: vertical; min-height: 200px; }
     <div class="card" style="padding:16px 20px">
       <div class="chat-messages" id="chat-messages">
         <div style="text-align:center;color:var(--muted);padding:40px 0;font-size:.9rem">
-          设置 Vault 目录后点击「开始对话」，AI 将自动读取故事档案并引导你进入第一幕。
+          选择小说后点击「开始对话」，AI 将自动读取故事档案并引导你进入第一幕。
         </div>
       </div>
       <div class="chat-input-row">
@@ -413,6 +427,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => {
     p.classList.toggle('active', p.id === 'tab-' + name);
   });
+  if (name === 'chat') loadNovelList();
 }
 
 // ─── Config ────────────────────────────────────────────────────────────────────
@@ -427,11 +442,8 @@ async function loadConfig() {
   try {
     const r = await fetch('/api/config');
     const d = await r.json();
-    document.getElementById('vault-path').value   = d.vault_path    || '';
-    document.getElementById('diary-folder').value = d.diary_folder  || '小说';
-    document.getElementById('provider').value     = d.provider      || 'deepseek';
-    document.getElementById('model').value        = d.model         || 'deepseek-chat';
-    document.getElementById('chat-vault').value   = d.vault_path    || '';
+    document.getElementById('provider').value = d.provider || 'deepseek';
+    document.getElementById('model').value    = d.model    || 'deepseek-chat';
     const ks = document.getElementById('key-status');
     if (d.has_key) {
       ks.innerHTML = `<span class="status ok">✓ 已保存 ${d.api_key_masked}</span>`;
@@ -443,11 +455,9 @@ async function loadConfig() {
 
 async function saveConfig() {
   const body = {
-    vault_path:   document.getElementById('vault-path').value.trim(),
-    diary_folder: document.getElementById('diary-folder').value.trim() || '小说',
-    provider:     document.getElementById('provider').value,
-    model:        document.getElementById('model').value.trim(),
-    api_key:      document.getElementById('api-key').value.trim(),
+    provider: document.getElementById('provider').value,
+    model:    document.getElementById('model').value.trim(),
+    api_key:  document.getElementById('api-key').value.trim(),
   };
   const msg = document.getElementById('config-msg');
   msg.innerHTML = '<span class="status info">保存中…</span>';
@@ -458,7 +468,6 @@ async function saveConfig() {
     if (!r.ok) throw new Error(await r.text());
     msg.innerHTML = '<span class="status ok">✓ 已保存</span>';
     document.getElementById('api-key').value = '';
-    document.getElementById('chat-vault').value = body.vault_path;
     await loadConfig();
   } catch(e) {
     msg.innerHTML = `<span class="status err">✗ ${e.message}</span>`;
@@ -469,8 +478,8 @@ async function saveConfig() {
 function onContentInput() {
   const len = document.getElementById('novel-content').value.length;
   const el = document.getElementById('char-counter');
-  el.textContent = `${len.toLocaleString()} / 13,000`;
-  el.className = 'char-counter' + (len > 13000 ? ' over' : len > 11000 ? ' warn' : '');
+  el.textContent = `${len.toLocaleString()} / 20,000`;
+  el.className = 'char-counter' + (len > 20000 ? ' over' : len > 17000 ? ' warn' : '');
 }
 
 function clearContent() {
@@ -498,9 +507,9 @@ async function parseNovel() {
   const protagonist = document.getElementById('protagonist').value.trim() || '我';
   const plotCount = parseInt(document.getElementById('plot-count').value) || 10;
 
-  if (!name) { alert('请填写文件名'); return; }
+  if (!name) { alert('请填写小说名称'); return; }
   if (!content.trim()) { alert('请输入小说内容'); return; }
-  if (content.length > 13000) { alert(`超出 13000 字上限（当前 ${content.length} 字）`); return; }
+  if (content.length > 20000) { alert(`超出 20000 字上限（当前 ${content.length} 字）`); return; }
 
   const btn = document.getElementById('parse-btn');
   const msg = document.getElementById('parse-msg');
@@ -516,6 +525,8 @@ async function parseNovel() {
   fd.append('protagonist', protagonist);
   fd.append('plot_count', plotCount);
   fd.append('content', content);
+
+  let parsedNovel = '';
 
   try {
     const resp = await fetch('/api/novel/parse', { method: 'POST', body: fd });
@@ -538,7 +549,12 @@ async function parseNovel() {
         if (!line.startsWith('data:')) continue;
         const d = JSON.parse(line.slice(5).trim());
         if (d.type === 'log')   logLine(d.text);
-        if (d.type === 'done')  { msg.innerHTML = `<span class="status ok">✓ ${d.text}</span>`; }
+        if (d.type === 'done') {
+          parsedNovel = d.novel || name;
+          msg.innerHTML = `<span class="status ok">✓ ${d.text}</span>
+            <button class="btn secondary" style="margin-left:8px;padding:4px 14px;font-size:.82rem"
+              onclick="goToChat('${parsedNovel}')">▶ 前往聊天</button>`;
+        }
         if (d.type === 'error') { msg.innerHTML = `<span class="status err">✗ ${d.text}</span>`; }
       }
     }
@@ -549,6 +565,36 @@ async function parseNovel() {
     btn.disabled = false;
     btn.textContent = '⚡ 上传并解析';
   }
+}
+
+function goToChat(novelName) {
+  switchTab('chat');
+  loadNovelList().then(() => {
+    const sel = document.getElementById('novel-select');
+    sel.value = novelName;
+  });
+}
+
+// ─── Novel list ────────────────────────────────────────────────────────────────
+async function loadNovelList() {
+  try {
+    const r = await fetch('/api/novel/list');
+    const names = await r.json();
+    const sel = document.getElementById('novel-select');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">-- 请选择小说 --</option>';
+    if (names.length === 0) {
+      sel.innerHTML = '<option value="">-- 尚无小说，请先上传解析 --</option>';
+    } else {
+      names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        if (n === cur) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.error(e); }
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
@@ -613,8 +659,8 @@ function removeLoading() {
 }
 
 async function startChat() {
-  const dir = document.getElementById('chat-vault').value.trim();
-  if (!dir) { alert('请先填写 Vault 目录'); return; }
+  const novelName = document.getElementById('novel-select').value;
+  if (!novelName) { alert('请先选择小说，或前往「上传解析」标签页添加小说'); return; }
 
   document.getElementById('chat-messages').innerHTML =
     '<div style="text-align:center;color:var(--muted);padding:20px;font-size:.85rem">初始化会话…</div>';
@@ -623,11 +669,10 @@ async function startChat() {
     const r = await fetch('/api/chat/reset', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id: 'default', vault_dir: dir })
+      body: JSON.stringify({ session_id: 'default', novel_name: novelName })
     });
     if (!r.ok) throw new Error(await r.text());
     document.getElementById('chat-messages').innerHTML = '';
-    // Auto-send an opening prompt
     document.getElementById('chat-input').value = '开始';
     await sendMessage();
   } catch(e) {
@@ -637,11 +682,11 @@ async function startChat() {
 }
 
 async function resetChat() {
-  const dir = document.getElementById('chat-vault').value.trim();
+  const novelName = document.getElementById('novel-select').value;
   await fetch('/api/chat/reset', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ session_id: 'default', vault_dir: dir })
+    body: JSON.stringify({ session_id: 'default', novel_name: novelName })
   });
   document.getElementById('chat-messages').innerHTML =
     '<div style="text-align:center;color:var(--muted);padding:40px 0;font-size:.9rem">会话已重置，点击「开始对话」重新开始。</div>';
@@ -653,8 +698,8 @@ async function sendMessage() {
   const msg = input.value.trim();
   if (!msg) return;
 
-  const dir = document.getElementById('chat-vault').value.trim();
-  if (!dir) { alert('请先设置 Vault 目录并点击「开始对话」'); return; }
+  const novelName = document.getElementById('novel-select').value;
+  if (!novelName) { alert('请先选择小说并点击「开始对话」'); return; }
 
   input.value = '';
   appendMsg('user', msg);
@@ -664,7 +709,7 @@ async function sendMessage() {
 
   const fd = new FormData();
   fd.append('message', msg);
-  fd.append('vault_dir', dir);
+  fd.append('novel_name', novelName);
   fd.append('session_id', 'default');
 
   let aiBubble = null;
@@ -733,6 +778,7 @@ async function sendMessage() {
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadConfig();
+loadNovelList();
 </script>
 </body>
 </html>
