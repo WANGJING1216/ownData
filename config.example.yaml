@@ -1,0 +1,34 @@
+# AI 智能日记拆分工具配置文件
+# 复制此文件为 config.yaml 并填写你的配置
+
+# Obsidian 库根目录（绝对路径）
+obsidian_vault_path: "/path/to/your/Obsidian Vault"
+
+# 日记文件夹（相对于 vault 根目录）
+diary_folder: "日记"
+
+# 各维度条目的输出文件夹（相对于 vault 根目录）
+# key 为模板中的维度名，value 为对应文件夹名
+output_folders:
+  属性: "属性"
+  事件: "事件"
+  人物: "人物"
+  情感: "情感"
+  关系: "关系"
+  成就: "成就"
+
+# 模板文件路径（优先在 vault 中查找，其次在脚本目录 templates/ 下查找）
+template_path: "templates/game_life.json"
+
+# AI API 配置
+api:
+  provider: "deepseek"           # 支持: deepseek, openai
+  api_key: "sk-xxxxxx"           # 替换为你的 API Key
+  model: "deepseek-chat"         # 模型名称
+  base_url: ""                   # 留空使用默认地址，可填代理或自托管地址
+
+# 已处理日记的记录文件（相对于脚本目录）
+processed_log: "processed_diaries.txt"
+
+# 日志文件（相对于脚本目录，留空则只输出到终端）
+log_file: "diary_splitter.log"

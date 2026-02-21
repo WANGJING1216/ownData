@@ -1,0 +1,45 @@
+{
+  "name": "游戏人生模板",
+  "dimensions": [
+    {
+      "name": "属性",
+      "fields": [
+        {"name": "属性名", "type": "text", "required": true},
+        {"name": "属性值", "type": "text"},
+        {"name": "属性类型", "type": "select", "options": ["性格", "状态", "喜好"]}
+      ]
+    },
+    {
+      "name": "事件",
+      "fields": [
+        {"name": "标题", "type": "text", "required": true},
+        {"name": "日期", "type": "date"},
+        {"name": "情感分", "type": "number", "min": 1, "max": 5},
+        {"name": "类型", "type": "multiselect", "options": ["家庭", "工作", "情感", "学习", "娱乐"]},
+        {"name": "描述", "type": "text"},
+        {"name": "关键词", "type": "multiselect", "free": true},
+        {"name": "是否核心", "type": "boolean"},
+        {"name": "关联人物", "type": "relation", "target": "关系"}
+      ]
+    },
+    {
+      "name": "关系",
+      "fields": [
+        {"name": "姓名", "type": "text", "required": true},
+        {"name": "关系类型", "type": "select", "options": ["家人", "朋友", "同事", "恋人", "其他"]},
+        {"name": "好感度", "type": "number", "min": 1, "max": 10},
+        {"name": "描述", "type": "text"}
+      ]
+    },
+    {
+      "name": "成就",
+      "fields": [
+        {"name": "标题", "type": "text", "required": true},
+        {"name": "类别", "type": "select", "options": ["工作", "学习", "生活", "社交", "健康"]},
+        {"name": "描述", "type": "text"},
+        {"name": "日期", "type": "date"},
+        {"name": "重要性", "type": "number", "min": 1, "max": 5}
+      ]
+    }
+  ]
+}
